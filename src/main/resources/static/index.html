@@ -68,9 +68,10 @@
 
 <div class="left-panel">
     <h1>Top Chinese Companies</h1>
-    <p>Last update: <span id="last-update">[date value, last time to press 'reload' button]</span></p>
+    <p>Last update: <span id="last-update">[Press 'reload' button]</span></p>
     <button id="reload-button">Reload</button>
-    <table>
+
+    <table id="companies-table">
         <thead>
         <tr>
             <th>Name</th>
@@ -85,6 +86,7 @@
         </tbody>
     </table>
 </div>
+
 
 <div class="right-panel">
     <div class="user-info">
@@ -120,6 +122,8 @@
                 return response.json();
             })
             .then(data => {
+                console.log("Datos recibidos:", data); // Línea agregada para imprimir los datos
+
                 const tableBody = document.getElementById('companies-table').getElementsByTagName('tbody')[0];
                 tableBody.innerHTML = '';
 
@@ -128,8 +132,8 @@
                 data.forEach(company => {
                     const row = tableBody.insertRow();
                     row.innerHTML = `
-                    <td>${company.name}</td>
-                    <td>${company.code}</td>
+                    <td>${company.companyName}</td>
+                    <td>${company.companyCode}</td>
                     <td>${company.marketCap}</td>
                     <td>${company.stockPrice}</td>
                     <td>${company.lastDayVariation}</td>
