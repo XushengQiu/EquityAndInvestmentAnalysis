@@ -9,59 +9,60 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 
 public class WebScrapping {
-    public List<String> getCompanyData() {
-        List<String> companyList = new ArrayList<>();
+    public List<Map<String, String>> getCompanyData() {
+        List<Map<String, String>> companyList = new ArrayList<>();
         try {
             Document doc = Jsoup.connect("https://companiesmarketcap.com/china/largest-companies-in-china-by-market-cap/").get();
             Elements rows = doc.select("tr");
 
             for (Element row : rows) {
                 Elements columns = row.select("td");
-                if (columns.size() >= 6) {  // Asegurarse de que hay al menos 6 columnas
-                    JSONObject companyData = new JSONObject();
-                    companyData.put("Company name", columns.get(2).text());
-                    companyData.put("Company code", columns.get(2).select("div.company-code").text());
-                    companyData.put("Company market cap", columns.get(3).text());
-                    companyData.put("Company stock price", columns.get(4).text());
-                    // Variación del último día, dividir entre 100 para que esté en el formato de %
+                if (columns.size() >= 6) {
+                    Map<String, String> companyData = new HashMap<>();
+                    companyData.put("companyName", columns.get(2).text());
+                    companyData.put("companyCode", columns.get(2).select("div.company-code").text());
+                    companyData.put("marketCap", columns.get(3).text());
+                    companyData.put("stockPrice", columns.get(4).text());
                     String lastDayVariation = columns.get(5).attr("data-sort");
-                    companyData.put("Last day variation", this.formatNumber(lastDayVariation));
+                    companyData.put("lastDayVariation", formatNumber(lastDayVariation));  // Asumiendo que formatNumber es un método que convierte el número
 
-                    companyList.add(companyData.toString());
+                    companyList.add(companyData);
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return this.modifyCompanyNames(companyList);
+        return this.cleanCompanyNames(companyList);  // Spring convertirá esta lista en un JSON
     }
 
-    public List<String> modifyCompanyNames(List<String> originalList) {
-        List<String> modifiedList = new ArrayList<>();
+    public List<Map<String, String>> cleanCompanyNames(List<Map<String, String>> originalList) {
+        List<Map<String, String>> cleanedList = new ArrayList<>();
 
-        for (String jsonStr : originalList) {
-            JSONObject company = new JSONObject(jsonStr);
+        for (Map<String, String> company : originalList) {
+            // Hacer una copia del mapa para evitar modificar el original si es necesario
+            Map<String, String> cleanedCompany = new HashMap<>(company);
 
-            String companyName = company.getString("Company name");
-            String companyCode = company.getString("Company code");
+            String companyName = cleanedCompany.get("companyName");
+            String companyCode = cleanedCompany.get("companyCode");
 
-            // Remover el código de la compañía del nombre de la compañía
-            if (companyName.endsWith(companyCode)) {
-                companyName = companyName.replace(companyCode, "").trim();
+            if (companyName != null && companyCode != null && companyName.endsWith(companyCode)) {
+                // Eliminar la terminación que es el código de la compañía
+                companyName = companyName.substring(0, companyName.lastIndexOf(companyCode)).trim();
+                cleanedCompany.put("companyName", companyName);
             }
 
-            // Actualizar el objeto JSON
-            company.put("Company name", companyName);
-
-            // Agregar a la nueva lista
-            modifiedList.add(company.toString());
+            cleanedList.add(cleanedCompany);
         }
 
-        return modifiedList;
+        return cleanedList;
     }
+
 
     public String formatNumber(String input) {
         try {
@@ -79,15 +80,4 @@ public class WebScrapping {
         }
     }
 
-    public static void main(String[] args) {
-        WebScrapping webScrapping = new WebScrapping();
-        List<String> companyList = null;
-        companyList = webScrapping.getCompanyData();
-        System.out.println(companyList.toString());
-        /*try {
-            Document doc = Jsoup.connect("https://companiesmarketcap.com/china/largest-companies-in-china-by-market-cap/").get();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
-    }
 }
