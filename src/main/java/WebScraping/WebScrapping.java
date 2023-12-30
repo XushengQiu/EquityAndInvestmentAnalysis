@@ -25,12 +25,12 @@ public class WebScrapping {
                 Elements columns = row.select("td");
                 if (columns.size() >= 6) {
                     Map<String, String> companyData = new HashMap<>();
-                    companyData.put("companyName", columns.get(2).text());
+                    companyData.put("companyName", replaceSpacesWithUnderscores(columns.get(2).text()));
                     companyData.put("companyCode", columns.get(2).select("div.company-code").text());
-                    companyData.put("marketCap", columns.get(3).text());
+                    companyData.put("marketCap", replaceSpacesWithUnderscores(columns.get(3).text()));
                     companyData.put("stockPrice", columns.get(4).text());
                     String lastDayVariation = columns.get(5).attr("data-sort");
-                    companyData.put("lastDayVariation", formatNumber(lastDayVariation));  // Asumiendo que formatNumber es un método que convierte el número
+                    companyData.put("lastDayVariation", formatNumber(lastDayVariation));
 
                     companyList.add(companyData);
                 }
@@ -41,7 +41,42 @@ public class WebScrapping {
         return this.cleanCompanyNames(companyList);  // Spring convertirá esta lista en un JSON
     }
 
-    public List<Map<String, String>> cleanCompanyNames(List<Map<String, String>> originalList) {
+    public List<Map<String, String>> getCompanyData88() {
+        List<Map<String, String>> companyList = this.getCompanyData();
+        if (companyList.size() > 88) {
+            return companyList.subList(0, 88);
+        } else {
+            return companyList;
+        }
+    }
+
+    public String searchForCompanyStockPrice(String name) {
+        List<Map<String, String>> companyList = this.getCompanyData();
+
+        for (Map<String, String> company : companyList) {
+            if (company.get("companyName").equals(name)) {
+                return company.get("stockPrice");
+            }
+        }
+
+        return "Empresa no encontrada";
+    }
+
+    public boolean isTheNameCorrect(String name) {
+        List<Map<String, String>> companyList = this.getCompanyData();
+
+        for (Map<String, String> company : companyList) {
+            if (company.get("companyName").equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /*_________________________________Auxiliares_________________________________*/
+
+    private List<Map<String, String>> cleanCompanyNames(List<Map<String, String>> originalList) {
         List<Map<String, String>> cleanedList = new ArrayList<>();
 
         for (Map<String, String> company : originalList) {
@@ -54,6 +89,7 @@ public class WebScrapping {
             if (companyName != null && companyCode != null && companyName.endsWith(companyCode)) {
                 // Eliminar la terminación que es el código de la compañía
                 companyName = companyName.substring(0, companyName.lastIndexOf(companyCode)).trim();
+                companyName = companyName.substring(0, companyName.length() - 1);
                 cleanedCompany.put("companyName", companyName);
             }
 
@@ -64,20 +100,26 @@ public class WebScrapping {
     }
 
 
-    public String formatNumber(String input) {
+    private String formatNumber(String input) {
         try {
             // Convertir el String a un número (usando BigDecimal para mayor precisión)
             BigDecimal number = new BigDecimal(input);
 
-            // Dividir el número por 100
             BigDecimal result = number.divide(new BigDecimal("100"));
 
-            // Convertir el resultado a String, reemplazar punto por coma y añadir '%'
-            return result.toString().replace('.', ',') + "%";
+            String formattedResult = result.compareTo(BigDecimal.ZERO) > 0 ? "+" : "";
+            formattedResult += result.toString() + "%";
+            return formattedResult;
         } catch (NumberFormatException e) {
-            // En caso de error en la conversión, retornar un mensaje de error
             return "Input inválido";
         }
+    }
+
+    private String replaceSpacesWithUnderscores(String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replace(" ", "_");
     }
 
 }

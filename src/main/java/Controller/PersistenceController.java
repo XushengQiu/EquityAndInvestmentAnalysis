@@ -1,8 +1,11 @@
 package Controller;
 
 import WebScraping.WebScrapping;
+import org.apache.catalina.User;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.sql.DataSource;
@@ -27,7 +30,12 @@ public class PersistenceController {
     @GetMapping("/api/companies")
     public List<Map<String, String>> getCompanies() {
         WebScrapping aux = new WebScrapping();
-        return aux.getCompanyData();
+        return aux.getCompanyData88();
+    }
+
+    @GetMapping("users/{id}")
+    public ResponseEntity<User> getById (@PathVariable long id){
+        return null;
     }
 
     // ----------------- SUPPORT FUNCTIONS ----------------- //
